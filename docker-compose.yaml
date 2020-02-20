@@ -1,0 +1,68 @@
+version: "3"
+services:
+  nginx:
+    image: nginx:1.15.7-alpine
+    container_name: nginx_typecho
+    working_dir: /var/www
+    ports:
+      - 8000:80
+      - 8443:443
+    volumes:
+      - ./www:/var/www/:rw
+      - ./nginx/conf.d:/etc/nginx/conf.d/:rw
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/fastcgi-php.conf:/etc/nginx/fastcgi-php.conf:ro
+      - ./nginx/fastcgi_params:/etc/nginx/fastcgi_params:ro
+      - ./logs/nginx:/var/log/nginx/:rw
+    environment:
+      TZ: Asia/Shanghai
+    restart: always
+    networks:
+      frontend:
+
+  mysql:
+    image: mysql:8.0.13
+    container_name: mysql_typecho
+    ports:
+      - 3306:3306
+    volumes:
+      - ./mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+      - ./mysql/data:/var/lib/mysql/:rw
+    restart: always
+    networks:
+      backend:
+        ipv4_address: 172.20.2.100
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: typecho
+      TZ: Asia/Shanghai
+
+  php:
+    container_name: php_typecho
+    build:
+      context: php
+      dockerfile: Dockerfile
+    volumes:
+      - ./www:/var/www/:rw
+      - ./php/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./php/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ./logs/php:/var/log/php
+      - ./data/composer:/tmp/composer
+    working_dir: /var/www
+    environment:
+      COMPOSER_HOME: /tmp/composer
+      TZ: Asia/Shanghai
+    restart: always
+    networks:
+      - backend
+      - frontend
+
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/16
