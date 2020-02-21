@@ -1,5 +1,5 @@
 ```
-git clone
+git clone https://github.com/slikyo/dnmp_typcho.git
 docker-compose up -d
 cd www
 wget http://typecho.org/downloads/1.1-17.10.30-release.tar.gz
